@@ -13,11 +13,11 @@ class HomeByRole extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     switch (tipoUsuario) {
-      case "Chofer":
+      case "chofer":
         return const HomeDriverScreen();
-      case "Administrativo":
+      case "admin":
         return const HomeScreen();
-      case "Estudiante":
+      case "estudiante":
       default:
         return const HomeStudentScreen();
     }
