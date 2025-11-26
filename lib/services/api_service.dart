@@ -35,13 +35,44 @@ class ApiService {
     }
   }
 
-  // ⚙️ Método extra para leer el token cuando lo necesites
+  //  Método extra para leer el token cuando lo necesites
   Future<String?> getToken() async {
     return await storage.read(key: 'token');
   }
 
-  // 🔒 Y si quieres cerrar sesión:
+  // Cerrar sesión:
   Future<void> logout() async {
     await storage.delete(key: 'token');
   }
+
+  // Método para crear cuanta de usuario
+
+  static Future<Map<String, dynamic>?> register(String nombre, String correo, String contrasena, String tipoUsuario) async {
+    try {
+      final url = Uri.parse('http://192.168.0.6:3000/usuarios');
+
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "nombre": nombre,
+          "correo": correo,
+          "contrasena": contrasena,
+          "rol": tipoUsuario.toLowerCase()
+        }),
+      );
+      
+     if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        print("Error en Registro: ${response.body}");
+        return null;
+      }
+    } catch (error) {
+      print("Excepción en registro(): $error");
+      return null;
+    }
+  }
+
+
 }
