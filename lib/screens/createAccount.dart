@@ -4,6 +4,8 @@ import '../services/api_service.dart';  // importa tu ApiService
 class CrearCuentaScreen extends StatefulWidget {
   const CrearCuentaScreen({super.key});
 
+  // agregar validacion con al menos una mayus minus y carac esp.
+
   @override
   State<CrearCuentaScreen> createState() => _CrearCuentaScreenState();
 }

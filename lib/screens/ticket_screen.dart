@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:convert';
 
+// agregar restriccion maxima de boletos de "40"
+
+
 class BoletosScreen extends StatefulWidget {
   const BoletosScreen({super.key});
 

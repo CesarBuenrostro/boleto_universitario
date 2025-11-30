@@ -46,7 +46,6 @@ class ApiService {
   }
 
   // Método para crear cuanta de usuario
-
   static Future<Map<String, dynamic>?> register(String nombre, String correo, String contrasena, String tipoUsuario) async {
     try {
       final url = Uri.parse('http://192.168.0.6:3000/usuarios');
@@ -74,5 +73,29 @@ class ApiService {
     }
   }
 
+  // Método para comprar boleto
+  static Future<Map<String, dynamic>?> ticketBuy(String idUsuario, String idRuta, String idUnidad, String fechaCompra, String codigoQr, String estado) async {
+    
+  }
 
+  // Método para mostrar rutas disponibles
+  Future<Map<String, dynamic>?> getRutas() async {
+    try {
+      final url = Uri.parse('http://192.168.0.6:3000/rutas');
+
+      final response = await http.get(
+        url,
+        headers: {"Content-Type": "application/json"},
+        );
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return jsonDecode(response.body);
+        } else {
+          print("Error al mostrar rutas");
+          return null;
+        }
+    } catch (error) {
+      print("Excepción en mostrar rutas: $error");
+      return null;
+    }
+  }
 }

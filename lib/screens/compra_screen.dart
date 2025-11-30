@@ -1,4 +1,7 @@
+import 'package:boleto_universitario/widgets/ruta_card.dart';
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+
 
 class ComprarBoletosScreen extends StatefulWidget {
   const ComprarBoletosScreen({super.key});
@@ -8,23 +11,44 @@ class ComprarBoletosScreen extends StatefulWidget {
 }
 
 class _ComprarBoletosScreenState extends State<ComprarBoletosScreen> {
-  final List<Map<String, dynamic>> rutas = [
-    {
-      "nombre": "Ruta A - Campus Norte",
-      "hora": "07:30 AM",
-      "precio": 10.0,
-    },
-    {
-      "nombre": "Ruta B - Campus Sur",
-      "hora": "08:00 AM",
-      "precio": 12.0,
-    },
-    {
-      "nombre": "Ruta C - Campus Centro",
-      "hora": "09:15 AM",
-      "precio": 8.5,
-    },
-  ];
+
+  late Future<List<dynamic>?> futureRutas;
+
+  @override
+  void initState() {
+    super.initState();
+    cargarRutas();
+  }
+
+List<Map<String, dynamic>> rutas = [];
+  bool cargando = true;
+
+Future<void> cargarRutas() async {
+  final data = await ApiService().getRutas();
+
+  if (mounted) {
+    setState(() {
+      if (data != null && data['data'] != null) {
+        rutas = List<Map<String, dynamic>>.from(data['data']).map((r) {
+          final precioRaw = r["precio"];
+
+          final precio = precioRaw is num
+              ? precioRaw.toDouble()
+              : double.tryParse(precioRaw.toString()) ?? 0.0;
+
+          return {
+            ...r,
+            "precio": precio,
+          };
+        }).toList();
+      }
+      cargando = false;
+    });
+  }
+}
+
+
+
 
   int cantidad = 1;
   double total = 0.0;
@@ -33,10 +57,13 @@ class _ComprarBoletosScreenState extends State<ComprarBoletosScreen> {
   void calcularTotal() {
     if (rutaSeleccionada != null) {
       setState(() {
-        total = cantidad * (rutaSeleccionada!['precio'] as num).toDouble();
+        final precio = double.tryParse(rutaSeleccionada!['precio'].toString()) ?? 0.0;
+        total = cantidad * precio;
       });
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -74,27 +101,30 @@ class _ComprarBoletosScreenState extends State<ComprarBoletosScreen> {
               ),
               const SizedBox(height: 10),
               Expanded(
-                child: ListView.builder(
+                child: cargando
+                  ? const Center(child: CircularProgressIndicator())
+                  : rutas.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "No hay rutas disponibles",
+                            style: TextStyle(fontSize: 16, color: Colors.black54),
+                          ),
+                        )
+                :ListView.builder(
                   itemCount: rutas.length,
                   itemBuilder: (context, index) {
                     final ruta = rutas[index];
                     final seleccionada = rutaSeleccionada == ruta;
-                    return Card(
-                      color: seleccionada ? Colors.green[100] : Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        title: Text(ruta["nombre"]),
-                        subtitle: Text("Salida: ${ruta["hora"]}"),
-                        trailing: Text("\$${ruta["precio"].toStringAsFixed(2)}"),
-                        onTap: () {
-                          setState(() {
-                            rutaSeleccionada = ruta;
-                            calcularTotal();
-                          });
-                        },
-                      ),
+
+                    return RutaCard(
+                      ruta: ruta,
+                      seleccionada: rutaSeleccionada == ruta,
+                      onTap: () {
+                        setState(() {
+                          rutaSeleccionada = ruta;
+                          calcularTotal();
+                        });
+                      },
                     );
                   },
                 ),
@@ -180,4 +210,5 @@ class _ComprarBoletosScreenState extends State<ComprarBoletosScreen> {
       ),
     );
   }
+
 }
