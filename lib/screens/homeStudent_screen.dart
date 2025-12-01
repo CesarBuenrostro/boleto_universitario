@@ -1,6 +1,11 @@
+import 'package:boleto_universitario/services/api_service.dart';
+import 'package:boleto_universitario/widgets/saldo_user.dart';
 import 'package:flutter/material.dart';
 import 'package:boleto_universitario/screens/ticket_screen.dart';
 import 'package:boleto_universitario/screens/profile_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart';
+
 
 class HomeStudentScreen extends StatefulWidget {
   const HomeStudentScreen({super.key});
@@ -10,11 +15,33 @@ class HomeStudentScreen extends StatefulWidget {
 }
 
 class _HomeStudentScreenState extends State<HomeStudentScreen> {
+
+  String? userId;
+  Map<String, dynamic>? datosSaldo;
+
+  @override
+    void initState() {
+      super.initState();
+      cargarUsuario();
+    }
+
+  void cargarUsuario() async {
+    final api = ApiService();
+    final id = await api.getUserId();
+    // print("desde pantalla: $id");
+
+    setState(() {
+      userId = id;
+    });
+  }
+
+
   int _selectedIndex = 0;
 
- final List<Map<String, dynamic>> _menuItems = [
+List<Map<String, dynamic>> get menuItems {
+  return [
     {
-      'page': const HomeContent(),
+      'page': HomeContent(userId: userId),
       'icon': Icons.home_outlined,
       'label': 'Inicio',
     },
@@ -29,6 +56,8 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
       'label': 'Perfil',
     },
   ];
+}
+
 
   void _onItemTapped(int index) {
     setState(() {
@@ -38,7 +67,7 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentPage = _menuItems[_selectedIndex]['page'] as Widget;
+    final currentPage = menuItems[_selectedIndex]['page'] as Widget;
 
     return Scaffold(
       body: currentPage,
@@ -49,7 +78,7 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white70,
         type: BottomNavigationBarType.fixed,
-        items: _menuItems
+        items: menuItems
             .map(
               (item) => BottomNavigationBarItem(
                 icon: Icon(item['icon']),
@@ -73,7 +102,8 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
 
 // ----------- HOME CONTENT -----------
 class HomeContent extends StatelessWidget {
-  const HomeContent({super.key});
+  final String? userId;
+  const HomeContent({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context) {
@@ -120,34 +150,8 @@ class HomeContent extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Saldo disponible
-            Card(
-              color: Colors.white,
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.account_balance_wallet,
-                        color: Color(0xFF2E7D32), size: 32),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Saldo disponible',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text('\$$saldo MXN',
-                            style: const TextStyle(
-                                fontSize: 20, color: Color(0xFF2E7D32))),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
+            SaldoCard(userId: userId),
+            
             // Boletos recientes
             const Text(
               'Últimos boletos',

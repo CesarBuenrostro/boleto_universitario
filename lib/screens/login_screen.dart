@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = false);
 
     if (response != null && response['success'] == true) {
-      final tipoUsuario = response['rol'] ?? 'Estudiante';
+      final tipoUsuario = response['rol'] ?? 'No Estudiante';
       print('Usuario autenticado como: $tipoUsuario');
 
       Navigator.pushReplacement(
