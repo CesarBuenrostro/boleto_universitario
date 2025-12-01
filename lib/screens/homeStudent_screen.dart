@@ -108,7 +108,6 @@ class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Datos simulados
-    final double saldo = 120.50;
     final List<Map<String, String>> boletos = [
       {'destino': 'Campus Central', 'fecha': '21 Oct 2025', 'hora': '08:15 AM'},
       {'destino': 'Campus Norte', 'fecha': '20 Oct 2025', 'hora': '07:45 AM'},
@@ -210,26 +209,3 @@ class HomeContent extends StatelessWidget {
   }
 }
 
-// ----------- OTRAS PÁGINAS -----------
-
-class TicketsPage extends StatelessWidget {
-  const TicketsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Pantalla de Boletos (en desarrollo)'),
-    );
-  }
-}
-
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Pantalla de Perfil (en desarrollo)'),
-    );
-  }
-}

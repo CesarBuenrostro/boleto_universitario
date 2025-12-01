@@ -1,6 +1,10 @@
+import 'package:boleto_universitario/services/api_service.dart';
+import 'package:boleto_universitario/widgets/saldo_user.dart';
 import 'package:flutter/material.dart';
 import 'package:boleto_universitario/screens/ticket_screen.dart';
 import 'package:boleto_universitario/screens/profile_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,11 +14,33 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+
+    String? userId;
+  Map<String, dynamic>? datosSaldo;
+
+  @override
+    void initState() {
+      super.initState();
+      cargarUsuario();
+    }
+
+  void cargarUsuario() async {
+    final api = ApiService();
+    final id = await api.getUserId();
+    // print("desde pantalla: $id");
+
+    setState(() {
+      userId = id;
+    });
+  }
+
+
   int _selectedIndex = 0;
 
- final List<Map<String, dynamic>> _menuItems = [
+List<Map<String, dynamic>> get menuItems {
+  return [
     {
-      'page': const HomeContent(),
+      'page': HomeContent(userId: userId),
       'icon': Icons.home_outlined,
       'label': 'Inicio',
     },
@@ -28,13 +54,8 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.person_outline,
       'label': 'Perfil',
     },
-    // futura sección de Métricas
-    // {
-    //   'page': const MetricsScreen(),
-    //   'icon': Icons.bar_chart_outlined,
-    //   'label': 'Métricas',
-    // },
   ];
+}
 
   void _onItemTapped(int index) {
     setState(() {
@@ -44,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentPage = _menuItems[_selectedIndex]['page'] as Widget;
+    final currentPage = menuItems[_selectedIndex]['page'] as Widget;
 
     return Scaffold(
       body: currentPage,
@@ -55,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white70,
         type: BottomNavigationBarType.fixed,
-        items: _menuItems
+        items: menuItems
             .map(
               (item) => BottomNavigationBarItem(
                 icon: Icon(item['icon']),
@@ -79,12 +100,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // ----------- HOME CONTENT -----------
 class HomeContent extends StatelessWidget {
-  const HomeContent({super.key});
+  final String? userId;
+  const HomeContent({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context) {
     // Datos simulados
-    final double saldo = 120.50;
     final List<Map<String, String>> boletos = [
       {'destino': 'Campus Central', 'fecha': '21 Oct 2025', 'hora': '08:15 AM'},
       {'destino': 'Campus Norte', 'fecha': '20 Oct 2025', 'hora': '07:45 AM'},
@@ -126,33 +147,7 @@ class HomeContent extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Saldo disponible
-            Card(
-              color: Colors.white,
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.account_balance_wallet,
-                        color: Color(0xFF2E7D32), size: 32),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Saldo disponible',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text('\$$saldo MXN',
-                            style: const TextStyle(
-                                fontSize: 20, color: Color(0xFF2E7D32))),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
+            SaldoCard(userId: userId),
 
             // Boletos recientes
             const Text(
@@ -208,30 +203,6 @@ class HomeContent extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-// ----------- OTRAS PÁGINAS -----------
-
-class TicketsPage extends StatelessWidget {
-  const TicketsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Pantalla de Boletos (en desarrollo)'),
-    );
-  }
-}
-
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Pantalla de Perfil (en desarrollo)'),
     );
   }
 }
