@@ -11,6 +11,24 @@ class PerfilScreen extends StatefulWidget {
 
 class _perfilScreenState extends State<PerfilScreen> {
 
+  Map<String, dynamic>? userData;
+
+  @override
+  void initState() {
+    super.initState();
+    cargarUsuario();
+  }
+
+  void cargarUsuario() async {
+    final api = ApiService();
+    final data = await api.getUserData();
+
+    setState(() {
+      userData = data;
+    });
+  }
+
+
   bool isLoading = false;
 
  Future<void> _logout() async {
@@ -30,15 +48,28 @@ class _perfilScreenState extends State<PerfilScreen> {
     Widget build(BuildContext context) {
 
       // Datos simulados del usuario
-      final Map<String, String> user = {
-        'nombre': 'Juan Pérez López',
-        'matricula': 'A01234567',
-        'correo': 'juanp@universidad.edu.mx',
-        'tipo': 'Estudiante',
-        'boletosComprados': '12',
-        'boletosUsados': '8',
-        'boletosDisponibles': '4',
-      };
+      // final Map<String, String> user = {
+      //   'nombre': 'Juan Pérez López456',
+      //   'matricula': 'A01234567',
+      //   'correo': 'juanp@universidad.edu.mx',
+      //   'tipo': 'Estudiante',
+      //   'boletosComprados': '12',
+      //   'boletosUsados': '8',
+      //   'boletosDisponibles': '4',
+      // };
+
+         // Si aún no se carga la info, muestra loader
+      if (userData == null) {
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+
+          final String nombre = userData!['nombre'] ?? "Nombre no disponible";
+          final String correo = userData!['correo'] ?? "Correo no disponible";
+          final String tipo = userData!['rol'] ?? "Sin rol";
+          final String matricula = userData!['id'] ?? "—";
+
 
       return Scaffold(
         body: Container(
@@ -68,7 +99,7 @@ class _perfilScreenState extends State<PerfilScreen> {
                 const SizedBox(height: 10),
 
                 Text(
-                  user['nombre']!,
+                  nombre,
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -77,7 +108,7 @@ class _perfilScreenState extends State<PerfilScreen> {
                 ),
 
                 Text(
-                  user['tipo']!,
+                  tipo,
                   style: const TextStyle(color: Colors.white70, fontSize: 16),
                 ),
 
@@ -108,11 +139,11 @@ class _perfilScreenState extends State<PerfilScreen> {
                           InfoTile(
                               icon: Icons.badge,
                               title: "Matrícula",
-                              value: user['matricula']!),
+                              value: matricula),
                           InfoTile(
                               icon: Icons.email,
                               title: "Correo institucional",
-                              value: user['correo']!),
+                              value: correo),
 
                           const SizedBox(height: 20),
 
@@ -125,26 +156,26 @@ class _perfilScreenState extends State<PerfilScreen> {
                           ),
                           const SizedBox(height: 10),
 
-                          StatTile(
-                            icon: Icons.shopping_bag,
-                            label: "Comprados",
-                            value: user['boletosComprados'].toString(),
-                            color: Colors.blueAccent,
-                          ),
-                          StatTile(
-                            icon: Icons.check_circle,
-                            label: "Usados",
-                            value: user['boletosUsados'].toString(),
-                            color: Colors.green,
-                          ),
-                          StatTile(
-                            icon: Icons.confirmation_number,
-                            label: "Disponibles",
-                            value: user['boletosDisponibles'].toString(),
-                            color: Colors.orange,
-                          ),
+                          // StatTile(
+                          //   icon: Icons.shopping_bag,
+                          //   label: "Comprados",
+                          //   value: user['boletosComprados'].toString(),
+                          //   color: Colors.blueAccent,
+                          // ),
+                          // StatTile(
+                          //   icon: Icons.check_circle,
+                          //   label: "Usados",
+                          //   value: user['boletosUsados'].toString(),
+                          //   color: Colors.green,
+                          // ),
+                          // StatTile(
+                          //   icon: Icons.confirmation_number,
+                          //   label: "Disponibles",
+                          //   value: user['boletosDisponibles'].toString(),
+                          //   color: Colors.orange,
+                          // ),
 
-                          const SizedBox(height: 25),
+                          // const SizedBox(height: 25),
 
                           // Botones de acción
                           ElevatedButton.icon(

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  final String baseUrl = 'http://192.168.0.6:3000'; // Ajusta según tu configuración
+  final String baseUrl = 'https://boletoapi-production.up.railway.app'; // Ajustar dependiendo de la red
   final storage = const FlutterSecureStorage();
 
   Future<Map<String, dynamic>?> login(String email, String password) async {
@@ -53,6 +53,29 @@ class ApiService {
     return await storage.read(key: 'userId');
   }
 
+  // Método para obtener información del usuario en Storage
+  Future<Map<String, dynamic>?> getUserData() async {
+  try {
+    final userId = await storage.read(key: 'userId');
+    final nombre = await storage.read(key: 'nombre');
+    final correo = await storage.read(key: 'correo');
+    final rol = await storage.read(key: 'rol');
+
+    if (userId == null) return null; // Si no hay usuario, no hay sesión
+
+    return {
+      'id': userId,
+      'nombre': nombre,
+      'correo': correo,
+      'rol': rol,
+    };
+  } catch (e) {
+    print("Error al obtener datos del usuario: $e");
+    return null;
+  }
+}
+
+
   // Cerrar sesión:
   Future<void> logout() async {
     await storage.delete(key: 'token');
@@ -61,7 +84,7 @@ class ApiService {
   // Método para crear cuanta de usuario
   static Future<Map<String, dynamic>?> register(String nombre, String correo, String contrasena, String tipoUsuario) async {
     try {
-      final url = Uri.parse('http://192.168.0.6:3000/usuarios');
+      final url = Uri.parse('https://boletoapi-production.up.railway.app/usuarios'); // no puedo la ruta base por que el método es estático
 
       final response = await http.post(
         url,
@@ -123,7 +146,7 @@ Future<double?> saldoUser(String? id) async {
   // Método para mostrar rutas disponibles
   Future<Map<String, dynamic>?> getRutas() async {
     try {
-      final url = Uri.parse('http://192.168.0.6:3000/rutas');
+      final url = Uri.parse('$baseUrl/rutas');
 
       final response = await http.get(
         url,
