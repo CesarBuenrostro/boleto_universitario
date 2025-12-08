@@ -1,64 +1,37 @@
+import 'package:boleto_universitario/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:convert';
 
-// agregar restriccion maxima de boletos de "40"
 
 
 class BoletosScreen extends StatefulWidget {
-  const BoletosScreen({super.key});
+
+  const BoletosScreen({
+    super.key,
+  });
 
   @override
   State<BoletosScreen> createState() => _BoletosScreenState();
 }
 
+
 class _BoletosScreenState extends State<BoletosScreen>
-    with SingleTickerProviderStateMixin {
+  with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  final List<Map<String, String>> boletosActivos = [
-    {
-      "id": "B001",
-      "origen": "Campus Norte",
-      "destino": "Campus Sur",
-      "fecha": "21/10/2025",
-      "hora": "07:30 AM",
-      "estado": "activo"
-    },
-    {
-      "id": "B002",
-      "origen": "Campus Sur",
-      "destino": "Centro",
-      "fecha": "21/10/2025",
-      "hora": "18:00 PM",
-      "estado": "activo"
-    },
-  ];
+  List<Map<String, dynamic>> boletosActivos = [];
+  List<Map<String, dynamic>> boletosUsados = [];
+  bool isLoading = true;
 
-  final List<Map<String, String>> boletosUsados = [
-    {
-      "id": "B003",
-      "origen": "Centro",
-      "destino": "Campus Norte",
-      "fecha": "20/10/2025",
-      "hora": "07:00 AM",
-      "estado": "usado"
-    },
-    {
-      "id": "B004",
-      "origen": "Campus Sur",
-      "destino": "Centro",
-      "fecha": "19/10/2025",
-      "hora": "17:45 PM",
-      "estado": "usado"
-    },
-  ];
-
-  @override
+    @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
   }
+
+
+
 
   @override
   void dispose() {
@@ -123,52 +96,52 @@ class _BoletosScreenState extends State<BoletosScreen>
     );
   }
 
-  Widget _buildListaBoletos(List<Map<String, String>> boletos) {
-    if (boletos.isEmpty) {
-      return const Center(
-        child: Text(
-          "No hay boletos en esta sección",
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: boletos.length,
-      itemBuilder: (context, index) {
-        final boleto = boletos[index];
-        final bool activo = boleto["estado"] == "activo";
-
-        return Card(
-          color: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 3,
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          child: ListTile(
-            leading: Icon(
-              activo ? Icons.check_circle : Icons.history,
-              color: activo ? Colors.green[800] : Colors.grey[600],
-              size: 36,
-            ),
-            title: Text(
-              "${boleto["origen"]} → ${boleto["destino"]}",
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text("${boleto["fecha"]} • ${boleto["hora"]}"),
-            trailing: IconButton(
-              icon: const Icon(Icons.qr_code_2),
-              color: Colors.green[800],
-              onPressed: () {
-                _mostrarQR(boleto);
-              },
-            ),
-          ),
-        );
-      },
+Widget _buildListaBoletos(List<Map<String, dynamic>> boletos) {
+  if (boletos.isEmpty) {
+    return const Center(
+      child: Text(
+        "No hay boletos en esta sección",
+        style: TextStyle(color: Colors.white, fontSize: 16),
+      ),
     );
   }
+
+  return ListView.builder(
+    padding: const EdgeInsets.all(16),
+    itemCount: boletos.length,
+    itemBuilder: (context, index) {
+      final boleto = boletos[index];
+      final activo = boleto["estado"] == "pendiente";
+
+      return Card(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 3,
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        child: ListTile(
+          leading: Icon(
+            activo ? Icons.check_circle : Icons.history,
+            color: activo ? Colors.green[800] : Colors.grey[600],
+            size: 36,
+          ),
+          title: Text(
+            "${boleto["origen"]} → ${boleto["destino"]}",
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text("${boleto["fecha"]} • ${boleto["hora"]}"),
+          // trailing: IconButton(
+          //   icon: const Icon(Icons.qr_code_2),
+          //   color: Colors.green[800],
+          //   onPressed: () {
+          //     _mostrarQR(boleto);
+          //   },
+          // ),
+        ),
+      );
+    },
+  );
+}
+
 
   void _mostrarQR(Map<String, String> boleto) {
     final dataQR = jsonEncode({
@@ -217,4 +190,5 @@ class _BoletosScreenState extends State<BoletosScreen>
       ),
     );
   }
+
 }

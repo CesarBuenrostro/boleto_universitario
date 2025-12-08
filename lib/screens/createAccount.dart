@@ -18,6 +18,23 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
   final TextEditingController correoController = TextEditingController();
   final TextEditingController contrasenaController = TextEditingController();
 
+  bool showPassword = false;
+
+
+  String? passwordValidator(String? value) {
+  if (value == null || value.isEmpty) {
+    return "La contraseña no puede estar vacía";
+  }
+
+  final regex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\W).{8,}$');
+
+  if (!regex.hasMatch(value)) {
+    return "Debe tener al menos 8 caracteres,\n1 mayúscula, 1 minúscula y 1 carácter especial";
+  }
+
+  return null;
+}
+
   String? tipoUsuario;
   bool isLoading = false;
 
@@ -45,6 +62,7 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
       correoController.text.trim(),
       contrasenaController.text.trim(),
       rolAPI, // estudiante, chofer, administrativo
+      matriculaController.text.trim()
     );
 
     setState(() => isLoading = false);
@@ -125,7 +143,9 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
                           controller: contrasenaController,
                           label: "Contraseña",
                           icon: Icons.lock,
-                          obscureText: true),
+                          obscureText: true,
+                          validator: passwordValidator,
+                          ),
 
                       const SizedBox(height: 30),
 
@@ -214,29 +234,52 @@ class _CrearCuentaScreenState extends State<CrearCuentaScreen> {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool obscureText = false,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        hintText: label,
-        filled: true,
-        fillColor: Colors.white,
-        prefixIcon: Icon(icon),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide.none,
-        ),
+Widget _buildTextField({
+  required TextEditingController controller,
+  required String label,
+  required IconData icon,
+  bool obscureText = false,
+  TextInputType keyboardType = TextInputType.text,
+  String? Function(String?)? validator,
+}) {
+  final isPasswordField = obscureText;
+
+  return TextFormField(
+    controller: controller,
+    obscureText: isPasswordField ? !showPassword : false,
+    keyboardType: keyboardType,
+    decoration: InputDecoration(
+      hintText: label,
+      filled: true,
+      fillColor: Colors.white,
+      prefixIcon: Icon(icon),
+
+      // OJO: este es el toggle para contraseña
+      suffixIcon: isPasswordField
+          ? IconButton(
+              icon: Icon(
+                showPassword ? Icons.visibility : Icons.visibility_off,
+              ),
+              onPressed: () {
+                setState(() {
+                  showPassword = !showPassword;
+                });
+              },
+            )
+          : null,
+
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(30),
+        borderSide: BorderSide.none,
       ),
-      validator: (value) =>
-          value == null || value.isEmpty ? "Campo requerido" : null,
-    );
-  }
+    ),
+
+    // Ahora sí usamos tu validator personalizable
+    validator: validator ??
+        (value) =>
+            value == null || value.isEmpty ? "Campo requerido" : null,
+  );
+}
+
+
 }

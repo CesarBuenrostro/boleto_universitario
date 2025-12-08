@@ -68,7 +68,7 @@ class _perfilScreenState extends State<PerfilScreen> {
           final String nombre = userData!['nombre'] ?? "Nombre no disponible";
           final String correo = userData!['correo'] ?? "Correo no disponible";
           final String tipo = userData!['rol'] ?? "Sin rol";
-          final String matricula = userData!['id'] ?? "—";
+          final String matricula = userData!['matricula'] ?? "—";
 
 
       return Scaffold(

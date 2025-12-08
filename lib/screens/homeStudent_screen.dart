@@ -1,4 +1,5 @@
 import 'package:boleto_universitario/services/api_service.dart';
+import 'package:boleto_universitario/widgets/BoletosRecientes.dart';
 import 'package:boleto_universitario/widgets/saldo_user.dart';
 import 'package:flutter/material.dart';
 import 'package:boleto_universitario/screens/ticket_screen.dart';
@@ -28,7 +29,6 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
   void cargarUsuario() async {
     final api = ApiService();
     final id = await api.getUserId();
-    // print("desde pantalla: $id");
 
     setState(() {
       userId = id;
@@ -39,9 +39,10 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
   int _selectedIndex = 0;
 
 List<Map<String, dynamic>> get menuItems {
+  final api = ApiService();
   return [
     {
-      'page': HomeContent(userId: userId),
+      'page': HomeContent(userId: userId, apiService: api),
       'icon': Icons.home_outlined,
       'label': 'Inicio',
     },
@@ -103,15 +104,11 @@ List<Map<String, dynamic>> get menuItems {
 // ----------- HOME CONTENT -----------
 class HomeContent extends StatelessWidget {
   final String? userId;
-  const HomeContent({super.key, required this.userId});
+  final ApiService apiService;
+  const HomeContent({super.key, required this.userId, required this.apiService});
 
   @override
   Widget build(BuildContext context) {
-    // Datos simulados
-    final List<Map<String, String>> boletos = [
-      {'destino': 'Campus Central', 'fecha': '21 Oct 2025', 'hora': '08:15 AM'},
-      {'destino': 'Campus Norte', 'fecha': '20 Oct 2025', 'hora': '07:45 AM'},
-    ];
 
     final List<String> avisos = [
       'El servicio de las 9:00 AM tendrá retraso por mantenimiento.',
@@ -158,20 +155,10 @@ class HomeContent extends StatelessWidget {
                   color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            ...boletos.map((boleto) => Card(
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  child: ListTile(
-                    leading: const Icon(Icons.directions_bus,
-                        color: Color(0xFF2E7D32)),
-                    title: Text(boleto['destino']!),
-                    subtitle:
-                        Text('${boleto['fecha']} - ${boleto['hora']}'),
-                    trailing: const Icon(Icons.check_circle_outline,
-                        color: Color(0xFF2E7D32)),
-                  ),
-                )),
+            BoletosRecientes(
+              apiService: apiService,
+              userId: userId!,
+            ),
             const SizedBox(height: 20),
 
             // Avisos del sistema

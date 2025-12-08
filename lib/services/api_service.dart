@@ -3,9 +3,10 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  final String baseUrl = 'https://boletoapi-production.up.railway.app'; // Ajustar dependiendo de la red
+  final String baseUrl = 'https://boletoapi-production.up.railway.app';
   final storage = const FlutterSecureStorage();
 
+// Login de usuario
   Future<Map<String, dynamic>?> login(String email, String password) async {
   final url = Uri.parse('$baseUrl/usuarios/login');
 
@@ -31,6 +32,7 @@ class ApiService {
         await storage.write(key: 'correo', value: data['usuario']['correo']);
         await storage.write(key: 'rol', value: data['usuario']['rol']);
         await storage.write(key: 'nombre', value: data['usuario']['nombre']);
+        await storage.write(key: 'matricula', value: data['usuario']['matricula']);
       }
 
       return data;
@@ -60,6 +62,7 @@ class ApiService {
     final nombre = await storage.read(key: 'nombre');
     final correo = await storage.read(key: 'correo');
     final rol = await storage.read(key: 'rol');
+    final matricula = await storage.read(key: 'matricula');
 
     if (userId == null) return null; // Si no hay usuario, no hay sesión
 
@@ -68,6 +71,7 @@ class ApiService {
       'nombre': nombre,
       'correo': correo,
       'rol': rol,
+      'matricula': matricula,
     };
   } catch (e) {
     print("Error al obtener datos del usuario: $e");
@@ -82,7 +86,7 @@ class ApiService {
   }
 
   // Método para crear cuanta de usuario
-  static Future<Map<String, dynamic>?> register(String nombre, String correo, String contrasena, String tipoUsuario) async {
+  static Future<Map<String, dynamic>?> register(String nombre, String correo, String contrasena, String tipoUsuario, String matricula) async {
     try {
       final url = Uri.parse('https://boletoapi-production.up.railway.app/usuarios'); // no puedo la ruta base por que el método es estático
 
@@ -93,7 +97,8 @@ class ApiService {
           "nombre": nombre,
           "correo": correo,
           "contrasena": contrasena,
-          "rol": tipoUsuario.toLowerCase()
+          "rol": tipoUsuario.toLowerCase(),
+          "matricula": matricula,
         }),
       );
       
@@ -163,4 +168,40 @@ Future<double?> saldoUser(String? id) async {
       return null;
     }
   }
+
+// Obtener boletos por usuario (y opcionalmente por estado)
+Future<Map<String, dynamic>?> getBoletosByUser(String userId, {String? estado}) async {
+  try {
+    // Construir parámetros dinámicos
+    final queryParams = {
+      'usuario': userId,
+      if (estado != null) 'estado': estado,
+    };
+
+    final url = Uri.parse('$baseUrl/boletos').replace(queryParameters: queryParams);
+
+    final response = await http.get(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      print("Error al obtener boletos del usuario");
+      print("STATUS: ${response.statusCode}");
+      print("BODY: ${response.body}");
+      return null;
+    }
+  } catch (error) {
+    print("Excepción al obtener boletos: $error");
+    return null;
+  }
+}
+
+
+
+
 }
