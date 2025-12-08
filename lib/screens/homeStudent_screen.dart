@@ -158,6 +158,7 @@ class HomeContent extends StatelessWidget {
             BoletosRecientes(
               apiService: apiService,
               userId: userId!,
+              shrink: true,
             ),
             const SizedBox(height: 20),
 

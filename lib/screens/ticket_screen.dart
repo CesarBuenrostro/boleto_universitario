@@ -1,37 +1,40 @@
 import 'package:boleto_universitario/services/api_service.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'dart:convert';
-
+import 'package:boleto_universitario/widgets/BoletosRecientes.dart';
 
 
 class BoletosScreen extends StatefulWidget {
-
-  const BoletosScreen({
-    super.key,
-  });
+  const BoletosScreen({super.key});
 
   @override
   State<BoletosScreen> createState() => _BoletosScreenState();
 }
 
-
 class _BoletosScreenState extends State<BoletosScreen>
-  with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
+
   late TabController _tabController;
+  late ApiService apiService;
+  String? userId;
+  bool cargando = true;
 
-  List<Map<String, dynamic>> boletosActivos = [];
-  List<Map<String, dynamic>> boletosUsados = [];
-  bool isLoading = true;
-
-    @override
+  @override
   void initState() {
     super.initState();
+    apiService = ApiService();
     _tabController = TabController(length: 2, vsync: this);
+
+    cargarUsuario();
   }
 
+  void cargarUsuario() async {
+    final id = await apiService.getUserId();
 
-
+    setState(() {
+      userId = id;
+      cargando = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -41,6 +44,20 @@ class _BoletosScreenState extends State<BoletosScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (cargando) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.green),
+        ),
+      );
+    }
+
+    if (userId == null) {
+      return const Scaffold(
+        body: Center(child: Text("Error al obtener ID de usuario")),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Mis Boletos"),
@@ -50,10 +67,10 @@ class _BoletosScreenState extends State<BoletosScreen>
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-            colors: [Color(0xFF00C853), Color(0xFFB2FF59)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+              colors: [Color(0xFF00C853), Color(0xFFB2FF59)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
         ),
         bottom: TabBar(
@@ -80,8 +97,16 @@ class _BoletosScreenState extends State<BoletosScreen>
           child: TabBarView(
             controller: _tabController,
             children: [
-              _buildListaBoletos(boletosActivos),
-              _buildListaBoletos(boletosUsados),
+              BoletosRecientes(
+                apiService: apiService,
+                userId: userId!,
+                estado: "pendiente",
+              ),
+              BoletosRecientes(
+                apiService: apiService,
+                userId: userId!,
+                estado: "validado",
+              ),
             ],
           ),
         ),
@@ -95,100 +120,4 @@ class _BoletosScreenState extends State<BoletosScreen>
       ),
     );
   }
-
-Widget _buildListaBoletos(List<Map<String, dynamic>> boletos) {
-  if (boletos.isEmpty) {
-    return const Center(
-      child: Text(
-        "No hay boletos en esta sección",
-        style: TextStyle(color: Colors.white, fontSize: 16),
-      ),
-    );
-  }
-
-  return ListView.builder(
-    padding: const EdgeInsets.all(16),
-    itemCount: boletos.length,
-    itemBuilder: (context, index) {
-      final boleto = boletos[index];
-      final activo = boleto["estado"] == "pendiente";
-
-      return Card(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 3,
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        child: ListTile(
-          leading: Icon(
-            activo ? Icons.check_circle : Icons.history,
-            color: activo ? Colors.green[800] : Colors.grey[600],
-            size: 36,
-          ),
-          title: Text(
-            "${boleto["origen"]} → ${boleto["destino"]}",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text("${boleto["fecha"]} • ${boleto["hora"]}"),
-          // trailing: IconButton(
-          //   icon: const Icon(Icons.qr_code_2),
-          //   color: Colors.green[800],
-          //   onPressed: () {
-          //     _mostrarQR(boleto);
-          //   },
-          // ),
-        ),
-      );
-    },
-  );
-}
-
-
-  void _mostrarQR(Map<String, String> boleto) {
-    final dataQR = jsonEncode({
-      "id": boleto["id"],
-      "origen": boleto["origen"],
-      "destino": boleto["destino"],
-      "fecha": boleto["fecha"],
-      "hora": boleto["hora"],
-      "estado": boleto["estado"]
-    });
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Código QR del Boleto"),
-        content: SizedBox(
-  width: 220, // Tamaño fijo para asegurar el layout
-  height: 260,
-  child: Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Expanded(
-        child: Center(
-          child: QrImageView(
-            data: dataQR,
-            version: QrVersions.auto,
-            backgroundColor: Colors.white,
-          ),
-        ),
-      ),
-      const SizedBox(height: 10),
-      Text(
-        "ID: ${boleto["id"]}",
-        style: const TextStyle(fontSize: 14),
-      ),
-    ],
-  ),
-),
-
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cerrar"),
-          ),
-        ],
-      ),
-    );
-  }
-
 }
