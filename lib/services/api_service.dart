@@ -266,4 +266,35 @@ Future<Map<String, dynamic>> validarBoleto(String codigoQR) async {
     }
   }
 
+
+Future<Map<String, dynamic>> obtenerDatosUsuario(String userId) async {
+  final url = Uri.parse("$baseUrl/usuarios/$userId");
+
+  try {
+    final response = await http.get(url);
+
+    return jsonDecode(response.body);
+  } catch (e) {
+    return {"success": false, "message": "Error de conexión", "error": e.toString()};
+  }
+}
+
+Future<Map<String, dynamic>> recargarSaldo(String userId, double monto) async {
+  final url = Uri.parse("$baseUrl/usuarios/$userId/recargar");
+
+  try {
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"monto": monto}),
+    );
+
+    return jsonDecode(response.body);
+  } catch (e) {
+    return {"success": false, "message": "Error de conexión", "error": e.toString()};
+  }
+}
+
+
+
 }

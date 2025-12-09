@@ -3,6 +3,7 @@ import 'package:boleto_universitario/widgets/saldo_user.dart';
 import 'package:flutter/material.dart';
 import 'package:boleto_universitario/screens/ticket_screen.dart';
 import 'package:boleto_universitario/screens/profile_screen.dart';
+import 'RecargarSaldo_Screen .dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart';
 
@@ -48,6 +49,11 @@ List<Map<String, dynamic>> get menuItems {
       'page': const BoletosScreen(),
       'icon': Icons.confirmation_num_outlined,
       'label': 'Boletos',
+    },
+    {
+      'page': const RecargarSaldoScreen(),
+      'icon': Icons.confirmation_num_outlined,
+      'label': 'Recargas',
     },
     {
       'page': const PerfilScreen(),
