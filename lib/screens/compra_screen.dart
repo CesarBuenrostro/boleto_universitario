@@ -1,7 +1,7 @@
+import 'package:boleto_universitario/widgets/HomeByRole.dart';
 import 'package:boleto_universitario/widgets/ruta_card.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-
 
 class ComprarBoletosScreen extends StatefulWidget {
   const ComprarBoletosScreen({super.key});
@@ -14,41 +14,55 @@ class _ComprarBoletosScreenState extends State<ComprarBoletosScreen> {
 
   late Future<List<dynamic>?> futureRutas;
 
-  @override
-  void initState() {
-    super.initState();
-    cargarRutas();
-  }
+  String? userId; 
+  Map<String, dynamic>? userData;
 
-List<Map<String, dynamic>> rutas = [];
-  bool cargando = true;
+@override
+void initState() {
+  super.initState();
+  cargarRutas();
+  cargarUsuario();
+}
 
-Future<void> cargarRutas() async {
-  final data = await ApiService().getRutas();
+void cargarUsuario() async {
+  final api = ApiService();
+  final id = await api.getUserId();
+  final data = await api.getUserData(); // Map<String, dynamic>?
 
-  if (mounted) {
-    setState(() {
-      if (data != null && data['data'] != null) {
-        rutas = List<Map<String, dynamic>>.from(data['data']).map((r) {
-          final precioRaw = r["precio"];
-
-          final precio = precioRaw is num
-              ? precioRaw.toDouble()
-              : double.tryParse(precioRaw.toString()) ?? 0.0;
-
-          return {
-            ...r,
-            "precio": precio,
-          };
-        }).toList();
-      }
-      cargando = false;
-    });
-  }
+  setState(() {
+    userId = id;
+    userData = data; // Map completo
+  });
 }
 
 
 
+  List<Map<String, dynamic>> rutas = [];
+  bool cargando = true;
+
+  Future<void> cargarRutas() async {
+    final data = await ApiService().getRutas();
+
+    if (mounted) {
+      setState(() {
+        if (data != null && data['data'] != null) {
+          rutas = List<Map<String, dynamic>>.from(data['data']).map((r) {
+            final precioRaw = r["precio"];
+
+            final precio = precioRaw is num
+                ? precioRaw.toDouble()
+                : double.tryParse(precioRaw.toString()) ?? 0.0;
+
+            return {
+              ...r,
+              "precio": precio,
+            };
+          }).toList();
+        }
+        cargando = false;
+      });
+    }
+  }
 
   int cantidad = 1;
   double total = 0.0;
@@ -63,7 +77,77 @@ Future<void> cargarRutas() async {
     }
   }
 
+  // ⭐ Método para llamar al Future comprarBoletos()
+  Future<void> _realizarCompra() async {
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error: No se encontró el usuario.")),
+      );
+      return;
+    }
 
+    final ruta = rutaSeleccionada!;
+    final api = ApiService();
+
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final result = await api.comprarBoletos(
+        userId: userId!,
+        idRuta: ruta["id"].toString(),
+        idUnidad: ruta["id_unidad"].toString(),
+        cantidad: cantidad,
+        monto: total,
+        metodo: "efectivo",
+      );
+
+      Navigator.pop(context); // Cerrar loader
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Compra exitosa"),
+          content: const Text("Tus boletos han sido generados 🎟️"),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HomeByRole(tipoUsuario: userData?['rol']), // aquiiiiiiiiiii
+                  ),
+                );
+              },
+              child: const Text("Aceptar"),
+            )
+          ],
+        ),
+      );
+
+      print("Boletos generados: ${result['data']['boletos']}");
+    } catch (e) {
+      Navigator.pop(context); // Cerrar loader
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Error"),
+          content: Text("No se pudo completar la compra.\n$e"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cerrar"),
+            )
+          ],
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,10 +160,10 @@ Future<void> cargarRutas() async {
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-            colors: [Color(0xFF00C853), Color(0xFFB2FF59)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+              colors: [Color(0xFF00C853), Color(0xFFB2FF59)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
         ),
       ),
@@ -102,42 +186,39 @@ Future<void> cargarRutas() async {
               const SizedBox(height: 10),
               Expanded(
                 child: cargando
-                  ? const Center(child: CircularProgressIndicator())
-                  : rutas.isEmpty
-                      ? const Center(
-                          child: Text(
-                            "No hay rutas disponibles",
-                            style: TextStyle(fontSize: 16, color: Colors.black54),
-                          ),
-                        )
-                :ListView.builder(
-                  itemCount: rutas.length,
-                  itemBuilder: (context, index) {
-                    final ruta = rutas[index];
-                    final seleccionada = rutaSeleccionada == ruta;
+                    ? const Center(child: CircularProgressIndicator())
+                    : rutas.isEmpty
+                        ? const Center(
+                            child: Text(
+                              "No hay rutas disponibles",
+                              style: TextStyle(fontSize: 16, color: Colors.black54),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: rutas.length,
+                            itemBuilder: (context, index) {
+                              final ruta = rutas[index];
+                              final seleccionada = rutaSeleccionada == ruta;
 
-                    return RutaCard(
-                      ruta: ruta,
-                      seleccionada: rutaSeleccionada == ruta,
-                      onTap: () {
-                        setState(() {
-                          rutaSeleccionada = ruta;
-                          calcularTotal();
-                        });
-                      },
-                    );
-                  },
-                ),
+                              return RutaCard(
+                                ruta: ruta,
+                                seleccionada: seleccionada,
+                                onTap: () {
+                                  setState(() {
+                                    rutaSeleccionada = ruta;
+                                    calcularTotal();
+                                  });
+                                },
+                              );
+                            },
+                          ),
               ),
               const SizedBox(height: 20),
               if (rutaSeleccionada != null) ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      "Cantidad:",
-                      style: TextStyle(fontSize: 16),
-                    ),
+                    const Text("Cantidad:", style: TextStyle(fontSize: 16)),
                     Row(
                       children: [
                         IconButton(
@@ -151,10 +232,7 @@ Future<void> cargarRutas() async {
                             }
                           },
                         ),
-                        Text(
-                          "$cantidad",
-                          style: const TextStyle(fontSize: 18),
-                        ),
+                        Text("$cantidad", style: const TextStyle(fontSize: 18)),
                         IconButton(
                           icon: const Icon(Icons.add_circle_outline),
                           onPressed: () {
@@ -178,27 +256,57 @@ Future<void> cargarRutas() async {
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // ⭐ Botón modificado
                 ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Compra realizada exitosamente 🎟️"),
-                      ),
-                    );
-                    Navigator.pushReplacementNamed(context, '/home');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00C853),
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    "Comprar",
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                ),
+  onPressed: () async {
+    if (userId == null || rutaSeleccionada == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error: falta información del usuario o ruta")),
+      );
+      return;
+    }
+
+    final api = ApiService();
+
+    final response = await api.comprarBoletos(
+          userId: userId!,
+          idRuta: rutaSeleccionada!['id_ruta'].toString(),
+          idUnidad: rutaSeleccionada!['id_unidad'].toString(),
+          cantidad: cantidad,
+          monto: total,
+          metodo: "saldo", // o efectivo, depende de tu lógica
+        );
+
+        if (response != null && response["success"] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Compra realizada exitosamente 🎟️")),
+          );
+          Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HomeByRole(tipoUsuario: userData?['rol']), // aquiiiiiiiiiii
+              ),
+            ); // llllllllllllllllllll
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Error al realizar la compra")),
+          );
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF00C853),
+        minimumSize: const Size(double.infinity, 50),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      child: const Text(
+        "Comprar",
+        style: TextStyle(fontSize: 18, color: Colors.white),
+      ),
+    )
+
               ] else
                 const Text(
                   "Selecciona una ruta para continuar",
@@ -210,5 +318,4 @@ Future<void> cargarRutas() async {
       ),
     );
   }
-
 }

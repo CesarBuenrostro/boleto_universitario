@@ -201,7 +201,41 @@ Future<Map<String, dynamic>?> getBoletosByUser(String userId, {String? estado}) 
   }
 }
 
+Future<Map<String, dynamic>> comprarBoletos({
+    required String userId,
+    required String idRuta,
+    required String idUnidad,
+    required int cantidad,
+    required double monto,
+    required String metodo,
+  }) async {
+    final url = Uri.parse("$baseUrl/boletos");
 
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "id_usuario": userId,
+          "id_ruta": idRuta,
+          "id_unidad": 1,
+          "cantidad": cantidad,
+          "monto": monto,
+          "metodo": metodo,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception("Error al comprar boletos: ${response.body}");
+      }
+    } catch (e) {
+      throw Exception("Error en la solicitud: $e");
+    }
+  }
 
 
 }
