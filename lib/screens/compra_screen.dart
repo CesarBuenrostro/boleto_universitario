@@ -102,8 +102,9 @@ void cargarUsuario() async {
         idUnidad: ruta["id_unidad"].toString(),
         cantidad: cantidad,
         monto: total,
-        metodo: "efectivo",
+        metodo: "saldo",
       );
+      
 
       Navigator.pop(context); // Cerrar loader
 

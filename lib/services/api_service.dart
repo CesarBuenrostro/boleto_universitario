@@ -238,4 +238,32 @@ Future<Map<String, dynamic>> comprarBoletos({
   }
 
 
+Future<Map<String, dynamic>> validarBoleto(String codigoQR) async {
+    final url = Uri.parse("$baseUrl/boletos/validar/$codigoQR");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        );
+
+      if (response.statusCode == 200 || response.statusCode == 400 || response.statusCode == 404) {
+        return jsonDecode(response.body);
+      } else {
+        return {
+          "success": false,
+          "message": "Error inesperado del servidor (${response.statusCode})"
+        };
+      }
+    } catch (e) {
+      return {
+        "success": false,
+        "message": "Error de conexión con el servidor",
+        "error": e.toString()
+      };
+    }
+  }
+
 }

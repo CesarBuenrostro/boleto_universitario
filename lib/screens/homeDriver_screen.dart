@@ -103,11 +103,7 @@ class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Datos simulados
-    final double saldo = 120.50;
-    final List<Map<String, String>> boletos = [
-      {'destino': 'Campus Central', 'fecha': '21 Oct 2025', 'hora': '08:15 AM'},
-      {'destino': 'Campus Norte', 'fecha': '20 Oct 2025', 'hora': '07:45 AM'},
-    ];
+    
 
     final List<String> avisos = [
       'El servicio de las 9:00 AM tendrá retraso por mantenimiento.',
@@ -136,7 +132,7 @@ class HomeContent extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Aquí puedes ver tu saldo, boletos recientes y avisos importantes.',
+              'Aquí puedes ver tu saldo   y avisos importantes.',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16,
@@ -147,28 +143,7 @@ class HomeContent extends StatelessWidget {
             // Saldo disponible
             SaldoCard(userId: userId),
 
-            // Boletos recientes
-            const Text(
-              'Últimos boletos',
-              style: TextStyle(
-                  color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            ...boletos.map((boleto) => Card(
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  child: ListTile(
-                    leading: const Icon(Icons.directions_bus,
-                        color: Color(0xFF2E7D32)),
-                    title: Text(boleto['destino']!),
-                    subtitle:
-                        Text('${boleto['fecha']} - ${boleto['hora']}'),
-                    trailing: const Icon(Icons.check_circle_outline,
-                        color: Color(0xFF2E7D32)),
-                  ),
-                )),
-            const SizedBox(height: 20),
+            
 
             // Avisos del sistema
             const Text(

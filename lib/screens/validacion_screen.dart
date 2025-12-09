@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import '../services/api_service.dart';
 
 class ValidarBoletoScreen extends StatefulWidget {
   const ValidarBoletoScreen({super.key});
@@ -10,51 +11,76 @@ class ValidarBoletoScreen extends StatefulWidget {
 
 class _ValidarBoletoScreenState extends State<ValidarBoletoScreen>
     with SingleTickerProviderStateMixin {
-  bool escaneando = false;
+  final ApiService api = ApiService();
+  bool procesando = false;
   String mensaje = "Apunta la cámara al código QR del boleto";
   Color colorMensaje = Colors.black87;
 
   late AnimationController _controller;
   late Animation<double> _animacion;
 
+  // Control del escáner
+  final MobileScannerController scannerController = MobileScannerController();
+  bool haEscaneado = false; // Evita lecturas múltiples del mismo QR
+
   @override
   void initState() {
     super.initState();
+
     _controller =
         AnimationController(vsync: this, duration: const Duration(seconds: 2))
           ..repeat(reverse: true);
+
     _animacion = Tween<double>(begin: 0, end: 1).animate(_controller);
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    scannerController.dispose();
     super.dispose();
   }
 
-  void simularEscaneo() {
+  Future<void> procesarCodigo(String codigoQR) async {
+    if (procesando) return;
+
     setState(() {
-      escaneando = true;
-      mensaje = "Escaneando...";
+      procesando = true;
+      mensaje = "Validando boleto...";
       colorMensaje = Colors.black87;
     });
 
-    // Simula el tiempo de lectura del QR
-    Timer(const Duration(seconds: 2), () {
-      final valido = DateTime.now().second % 2 == 0; // validación aleatoria
+    final resultado = await api.validarBoleto(codigoQR);
 
-      setState(() {
-        escaneando = false;
-        if (valido) {
-          mensaje = "✅ Boleto válido. ¡Bienvenido a bordo!";
-          colorMensaje = Colors.green[800]!;
-        } else {
-          mensaje = "❌ Boleto inválido. Intenta nuevamente.";
-          colorMensaje = Colors.red[700]!;
-        }
-      });
+    setState(() {
+      if (resultado["success"] == true) {
+        mensaje = "✅ Boleto válido. ¡Bienvenido a bordo!";
+        colorMensaje = Colors.green[800]!;
+      } else {
+        mensaje = "❌ ${resultado["message"] ?? "Boleto inválido"}";
+        colorMensaje = Colors.red[700]!;
+      }
+
+      procesando = false;
     });
   }
+
+  void resetearEscaneo() async {
+    setState(() {
+      haEscaneado = false;
+      mensaje = "Apunta la cámara al código QR del boleto";
+      colorMensaje = Colors.black87;
+    });
+
+    // Reiniciamos la cámara para poder volver a escanear
+    try {
+      await scannerController.start();
+    } catch (e) {
+      // ignore, si no se pudo iniciar no queremos romper la UI
+      print("No se pudo reiniciar la cámara: $e");
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -67,10 +93,10 @@ class _ValidarBoletoScreenState extends State<ValidarBoletoScreen>
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-            colors: [Color(0xFF00C853), Color(0xFFB2FF59)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+              colors: [Color(0xFF00C853), Color(0xFFB2FF59)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
         ),
       ),
@@ -84,11 +110,9 @@ class _ValidarBoletoScreenState extends State<ValidarBoletoScreen>
           ),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.qr_code_scanner,
-                size: 80, color: Colors.black54),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
+
             Text(
               mensaje,
               textAlign: TextAlign.center,
@@ -98,51 +122,75 @@ class _ValidarBoletoScreenState extends State<ValidarBoletoScreen>
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 30),
 
-            // Cuadro de simulación del escaneo
+            const SizedBox(height: 20),
+
+            // Vista de la cámara con overlay y animación
             Stack(
               alignment: Alignment.center,
               children: [
                 Container(
-                  width: 250,
-                  height: 250,
+                  width: 300,
+                  height: 300,
+                  clipBehavior: Clip.hardEdge,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.green, width: 4),
-                    color: Colors.white,
+                  ),
+                  child: MobileScanner(
+                    controller: scannerController,
+                    onDetect: (capture) async {
+                      if (haEscaneado) return;
+                      haEscaneado = true;
+
+                      // Para mayor seguridad, detenemos la cámara inmediatamente
+                      try {
+                        await scannerController.stop();
+                      } catch (_) {}
+
+
+                      final List<Barcode> barcodes = capture.barcodes;
+
+                      if (barcodes.isNotEmpty) {
+                        final valorQR = barcodes.first.rawValue ?? "";
+                        procesarCodigo(valorQR);
+                      }
+                    },
                   ),
                 ),
+
+                // Línea animada estilo escáner
                 AnimatedBuilder(
                   animation: _animacion,
                   builder: (context, child) {
                     return Positioned(
-                      top: 250 * _animacion.value,
+                      top: 300 * _animacion.value,
                       child: Container(
-                        width: 230,
-                        height: 3,
+                        width: 260,
+                        height: 4,
                         color: Colors.greenAccent,
                       ),
-                    );
-                  },
-                ),
-              ],
+                );
+              },
             ),
+          ],
+        ),
 
             const SizedBox(height: 40),
+
             ElevatedButton.icon(
-              onPressed: escaneando ? null : simularEscaneo,
+              onPressed: procesando ? null : resetearEscaneo,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00C853),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 40, vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              icon: const Icon(Icons.qr_code, color: Colors.white),
+              icon: const Icon(Icons.restart_alt, color: Colors.white),
               label: const Text(
-                "Simular escaneo",
+                "Reintentar escaneo",
                 style: TextStyle(fontSize: 18, color: Colors.white),
               ),
             ),
